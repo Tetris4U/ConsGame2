@@ -44,12 +44,13 @@
     filter: drop-shadow(0 0 2px #ffd700aa);
   }
 
+  /* BIGGER PUZZLE */
   #puzzle {
     position: relative;
-    width: 90vw;
-    max-width: 450px;
-    height: calc(90vw / 1.47);
-    max-height: calc(450px / 1.47);
+    width: 95vw;
+    max-width: 500px;
+    height: 95vw;
+    max-height: 500px;
     border: 4px solid #ffd700;
     border-radius: 12px;
     background: #000;
@@ -62,16 +63,16 @@
     border: 2px solid #4B0082; /* dark purple */
     box-sizing: border-box;
     cursor: pointer;
-    background-image: url('https://th.bing.com/th/id/OIP.HNcDb0yoVKuoj78WAA_f0wHaEK?w=265&h=180&c=7&r=0&o=7&cb=ucfimg2&pid=1.7&rm=3&ucfimg=1');
+    background-image: url("https://www.teahub.io/photos/full/286-2863426_joker-wallpaper-2019-4k.jpg");
     background-repeat: no-repeat;
-    background-size: 400% 271.6%;
+    background-size: 400% 400%; /* 4x4 grid */
     transition: top 0.25s ease, left 0.25s ease;
     border-radius: 8px;
   }
 
   .empty {
-    background: #555555;
-    border: 2px dashed #4B0082; /* dark purple dashed border */
+    background: #777777; /* grey free space */
+    border: 2px dashed #4B0082; 
     cursor: default;
   }
 
@@ -118,7 +119,6 @@
   const puzzle = document.getElementById('puzzle');
   const message = document.getElementById('message');
   const shuffleBtn = document.getElementById('shuffleBtn');
-
   const tileSizePercent = 100 / PUZZLE_SIZE;
 
   let positions = [];
@@ -140,7 +140,7 @@
 
       const row = Math.floor(i / PUZZLE_SIZE);
       const col = i % PUZZLE_SIZE;
-      tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * (100 / 1.47)}%`;
+      tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * tileSizePercent}%`;
 
       tile.dataset.correctIndex = i;
       tile.dataset.currentIndex = i;
@@ -149,7 +149,7 @@
       tiles.push(tile);
     }
 
-    positions[positions.length - 1] = -1;
+    positions[positions.length - 1] = -1; // free space
   }
 
   function indexToPos(index) {
@@ -170,71 +170,51 @@
     }
   }
 
-  function isAdjacent(index1, index2) {
-    if (index1 === -1 || index2 === -1) return false;
-    const pos1 = indexToPos(index1);
-    const pos2 = indexToPos(index2);
-    const dRow = Math.abs(pos1.row - pos2.row);
-    const dCol = Math.abs(pos1.col - pos2.col);
-    return (dRow + dCol) === 1;
+  function isAdjacent(a, b) {
+    if (a === -1 || b === -1) return false;
+    const p1 = indexToPos(a), p2 = indexToPos(b);
+    return Math.abs(p1.row - p2.row) + Math.abs(p1.col - p2.col) === 1;
   }
 
   function onTileClick(e) {
     const tile = e.currentTarget;
-    const tileIndex = parseInt(tile.dataset.currentIndex);
+    const idx = parseInt(tile.dataset.currentIndex);
     const emptyIndex = positions.indexOf(-1);
-
-    if (isAdjacent(tileIndex, emptyIndex)) {
-      positions[emptyIndex] = positions[tileIndex];
-      positions[tileIndex] = -1;
+    if (isAdjacent(idx, emptyIndex)) {
+      positions[emptyIndex] = positions[idx];
+      positions[idx] = -1;
       updateTiles();
-      if (isSolved()) {
-        message.textContent = "🎉 You solved the puzzle! 🦇";
-      } else {
-        message.textContent = '';
-      }
+      message.textContent = isSolved() ? "🎉 You solved the puzzle! 🦇" : '';
     }
   }
 
   function shufflePuzzle(moves = 1000) {
     let emptyIndex = positions.indexOf(-1);
-
     for (let i = 0; i < moves; i++) {
       const neighbors = [];
-      const emptyPos = indexToPos(emptyIndex);
-
-      if (emptyPos.row > 0) neighbors.push(emptyIndex - PUZZLE_SIZE);
-      if (emptyPos.row < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + PUZZLE_SIZE);
-      if (emptyPos.col > 0) neighbors.push(emptyIndex - 1);
-      if (emptyPos.col < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + 1);
-
-      const randIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
-
-      positions[emptyIndex] = positions[randIndex];
-      positions[randIndex] = -1;
-      emptyIndex = randIndex;
+      const ePos = indexToPos(emptyIndex);
+      if (ePos.row > 0) neighbors.push(emptyIndex - PUZZLE_SIZE);
+      if (ePos.row < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + PUZZLE_SIZE);
+      if (ePos.col > 0) neighbors.push(emptyIndex - 1);
+      if (ePos.col < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + 1);
+      const rand = neighbors[Math.floor(Math.random() * neighbors.length)];
+      positions[emptyIndex] = positions[rand];
+      positions[rand] = -1;
+      emptyIndex = rand;
     }
     updateTiles();
     message.textContent = '';
   }
 
   function isSolved() {
-    for (let i = 0; i < positions.length - 1; i++) {
-      if (positions[i] !== i) return false;
-    }
-    return true;
+    return positions.slice(0, -1).every((val,i) => val === i);
   }
 
   createTiles();
   updateTiles();
-
-  tiles.forEach(tile => tile.addEventListener('click', onTileClick));
-  tiles.forEach(tile => tile.addEventListener('touchstart', onTileClick, { passive: false }));
-
-  shuffleBtn.addEventListener('click', () => {
-    shufflePuzzle();
-  });
-
+  tiles.forEach(t => t.addEventListener('click', onTileClick));
+  tiles.forEach(t => t.addEventListener('touchstart', onTileClick, { passive: false }));
+  shuffleBtn.addEventListener('click', shufflePuzzle);
   shufflePuzzle();
 </script>
 
