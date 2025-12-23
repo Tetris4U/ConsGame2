@@ -242,4 +242,18 @@
     return true;
   }
 
-  createTiles(
+  createTiles();
+  updateTiles();
+
+  tiles.forEach(tile => tile.addEventListener('click', onTileClick));
+  tiles.forEach(tile => tile.addEventListener('touchstart', onTileClick, { passive: false }));
+
+  shuffleBtn.addEventListener('click', () => {
+    shufflePuzzle();
+  });
+
+  shufflePuzzle();
+</script>
+
+</body>
+</html>
