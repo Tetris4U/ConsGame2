@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Slide Puzzle</title>
+<title>Slide Puzzle - Cover style tiles</title>
 <style>
   html, body {
     margin: 0; padding: 0;
     width: 100vw; height: 100vh;
-    background: linear-gradient(135deg, #000000, #1a1a1a);
+    background: #000; /* black background */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -22,13 +22,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    perspective: 800px;
   }
 
   h1 {
     font-size: 1.8rem;
     margin: 0;
-    backface-visibility: hidden;
     animation: flipTitle 3s ease-in-out infinite alternate;
   }
 
@@ -50,21 +48,22 @@
     max-width: 500px;
     height: 95vw;
     max-height: 500px;
+    background: #000; /* black background */
     border: 4px solid #ffd700;
     border-radius: 12px;
-    background: #000;
     box-shadow: 0 0 20px #ffd700aa;
     touch-action: manipulation;
   }
 
   .tile {
     position: absolute;
-    border: 2px solid #4B0082; /* dark purple */
+    border: 2px solid #4B0082; /* dark purple border */
     box-sizing: border-box;
     cursor: pointer;
     background-image: url("https://www.teahub.io/photos/full/286-2863426_joker-wallpaper-2019-4k.jpg");
     background-repeat: no-repeat;
-    background-size: 400% 225%; /* 4 columns horizontally (400%), height adjusted to image aspect ratio (225%) */
+    background-size: cover; /* cover each tile fully */
+    background-position: center center;
     transition: top 0.25s ease, left 0.25s ease;
     border-radius: 8px;
   }
@@ -136,16 +135,6 @@
       const tile = document.createElement('div');
       tile.classList.add('tile');
       tile.style.width = tile.style.height = tileSizePercent + '%';
-
-      const row = Math.floor(i / PUZZLE_SIZE);
-      const col = i % PUZZLE_SIZE;
-
-      // Adjust background-position based on image aspect ratio
-      // background-size: 400% 225%, so each tile is 25% horizontally, 56.25% vertically
-      const bgPosX = col * 25; 
-      const bgPosY = row * 56.25;
-
-      tile.style.backgroundPosition = `${bgPosX}% ${bgPosY}%`;
 
       tile.dataset.correctIndex = i;
       tile.dataset.currentIndex = i;
