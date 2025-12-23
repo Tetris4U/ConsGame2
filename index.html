@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Batman Slide Puzzle</title>
+<title>Batman/Joker Slide Puzzle</title>
 <style>
   html, body {
     margin: 0; padding: 0;
@@ -33,10 +33,35 @@
     border: 2px solid #ffd700;
     box-sizing: border-box;
     cursor: pointer;
-    background-image: url('https://i.imgur.com/ypf5k1P.png'); /* Batman silhouette */
+    background-image: url('https://th.bing.com/th/id/OIP.HNcDb0yoVKuoj78WAA_f0wHaEK?w=265&h=180&c=7&r=0&o=7&cb=ucfimg2&pid=1.7&rm=3&ucfimg=1');
     background-size: 400% 400%; /* 4x4 tiles */
     transition: top 0.25s ease, left 0.25s ease;
     border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 2px;
+    user-select: none;
+  }
+  .tile.message-tile {
+    background-image: none !important;
+    cursor: default;
+    font-size: 13px;
+    line-height: 1.2;
+    padding: 6px 4px;
+    color: #ffd700;
+  }
+  .bat-logo {
+    width: 32px;
+    height: 16px;
+    margin-bottom: 4px;
+    fill: #ffd700;
+    filter: drop-shadow(0 0 2px #ffd700aa);
   }
   .empty {
     background: none;
@@ -82,12 +107,22 @@
 
   const tileSizePercent = 100 / PUZZLE_SIZE;
 
-  // Positions array: holds current tile positions, last is empty spot
   let positions = [];
-  // Array of tile elements
   let tiles = [];
 
-  // Initialize puzzle
+  function createBatLogoSVG() {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("viewBox", "0 0 37 17");
+    svg.classList.add('bat-logo');
+
+    // Bat shape path from a simple batman silhouette
+    const path = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", "M1 9c2-3 6-4 11-4 3 0 7 1 10 4 3-3 7-4 11-4-5 2-6 7-10 7-4 0-5-5-10-7z");
+    svg.appendChild(path);
+    return svg;
+  }
+
   function createTiles() {
     puzzle.innerHTML = '';
     positions = [];
@@ -100,12 +135,29 @@
     for (let i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE - 1; i++) {
       const tile = document.createElement('div');
       tile.classList.add('tile');
-      tile.style.width = tile.style.height = tileSizePercent + '%';
 
-      // Set background position to show correct piece of image
-      const row = Math.floor(i / PUZZLE_SIZE);
-      const col = i % PUZZLE_SIZE;
-      tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * tileSizePercent}%`;
+      // Special tile with message + bat logo on tile #14 (index 14)
+      if (i === 14) {
+        tile.classList.add('message-tile');
+        // Add bat logo SVG
+        const batLogo = createBatLogoSVG();
+        tile.appendChild(batLogo);
+        // Add message text lines
+        const lines = ["Con", "Don't", "work", "too", "hard"];
+        lines.forEach(line => {
+          const span = document.createElement('div');
+          span.textContent = line;
+          tile.appendChild(span);
+        });
+      } else {
+        tile.style.backgroundImage = "url('https://th.bing.com/th/id/OIP.HNcDb0yoVKuoj78WAA_f0wHaEK?w=265&h=180&c=7&r=0&o=7&cb=ucfimg2&pid=1.7&rm=3&ucfimg=1')";
+        tile.style.backgroundSize = '400% 400%';
+        const row = Math.floor(i / PUZZLE_SIZE);
+        const col = i % PUZZLE_SIZE;
+        tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * tileSizePercent}%`;
+      }
+
+      tile.style.width = tile.style.height = tileSizePercent + '%';
 
       tile.dataset.correctIndex = i;
       tile.dataset.currentIndex = i;
@@ -114,16 +166,13 @@
       tiles.push(tile);
     }
 
-    // Add empty tile representation (no element, but track position)
     positions[positions.length - 1] = -1;
   }
 
-  // Get row and col from index
   function indexToPos(index) {
     return { row: Math.floor(index / PUZZLE_SIZE), col: index % PUZZLE_SIZE };
   }
 
-  // Move tile to a specific position (index)
   function moveTile(tile, positionIndex) {
     const pos = indexToPos(positionIndex);
     tile.style.top = (pos.row * tileSizePercent) + '%';
@@ -131,7 +180,6 @@
     tile.dataset.currentIndex = positionIndex;
   }
 
-  // Update all tiles positions according to positions array
   function updateTiles() {
     for (let i = 0; i < tiles.length; i++) {
       const posIndex = positions.indexOf(i);
@@ -139,7 +187,6 @@
     }
   }
 
-  // Check if two positions are adjacent (up/down/left/right)
   function isAdjacent(index1, index2) {
     if (index1 === -1 || index2 === -1) return false;
     const pos1 = indexToPos(index1);
@@ -149,14 +196,12 @@
     return (dRow + dCol) === 1;
   }
 
-  // Handle tile click/tap
   function onTileClick(e) {
     const tile = e.currentTarget;
     const tileIndex = parseInt(tile.dataset.currentIndex);
     const emptyIndex = positions.indexOf(-1);
 
     if (isAdjacent(tileIndex, emptyIndex)) {
-      // Swap positions in array
       positions[emptyIndex] = positions[tileIndex];
       positions[tileIndex] = -1;
       updateTiles();
@@ -168,7 +213,6 @@
     }
   }
 
-  // Shuffle puzzle by making valid random moves
   function shufflePuzzle(moves = 1000) {
     let emptyIndex = positions.indexOf(-1);
 
@@ -176,16 +220,13 @@
       const neighbors = [];
       const emptyPos = indexToPos(emptyIndex);
 
-      // Find neighbors (up/down/left/right)
       if (emptyPos.row > 0) neighbors.push(emptyIndex - PUZZLE_SIZE);
       if (emptyPos.row < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + PUZZLE_SIZE);
       if (emptyPos.col > 0) neighbors.push(emptyIndex - 1);
       if (emptyPos.col < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + 1);
 
-      // Pick random neighbor to swap
       const randIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
 
-      // Swap empty and neighbor
       positions[emptyIndex] = positions[randIndex];
       positions[randIndex] = -1;
       emptyIndex = randIndex;
@@ -194,7 +235,6 @@
     message.textContent = '';
   }
 
-  // Check if puzzle solved
   function isSolved() {
     for (let i = 0; i < positions.length - 1; i++) {
       if (positions[i] !== i) return false;
@@ -202,22 +242,4 @@
     return true;
   }
 
-  // Setup
-  createTiles();
-  updateTiles();
-
-  // Add event listeners for tiles
-  tiles.forEach(tile => tile.addEventListener('click', onTileClick));
-  tiles.forEach(tile => tile.addEventListener('touchstart', onTileClick, { passive: false }));
-
-  shuffleBtn.addEventListener('click', () => {
-    shufflePuzzle();
-  });
-
-  // Shuffle initially
-  shufflePuzzle();
-</script>
-
-</body>
-</html>
-
+  createTiles(
