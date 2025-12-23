@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Flappy Bat – Adjusted Jump</title>
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: black;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Adjusted game settings for smoother, shorter jump
+  const gravity = 0.7;
+  const jumpPower = -7.5;
+  const speed = 3;
+  const gap = 150;
+  const pipeWidth = 70;
+
+  let score = 0;
+  let gameOver = false;
+
+  const bat = {
+    x: canvas.width / 4,
+    y: canvas.height / 2,
+    r: 14,
+    vy: 0
+  };
+
+  let pipes = [];
+
+  function spawnPipe() {
+    const y = Math.random() * (canvas.height - 280) + 140;
+    pipes.push({ x: canvas.width, y, passed: false });
+  }
+  setInterval(spawnPipe, 1700);
+
+  function flap(e) {
+    e.preventDefault();
+    if (gameOver) {
+      reset();
+      return;
+    }
+    bat.vy = jumpPower;
+  }
+  document.addEventListener('touchstart', flap, { passive: false });
+  document.addEventListener('mousedown', flap);
+
+  function reset() {
+    score = 0;
+    pipes = [];
+    bat.y = canvas.height / 2;
+    bat.vy = 0;
+    gameOver = false;
+  }
+
+  function update() {
+    if (gameOver) return;
+
+    bat.vy += gravity;
+    bat.y += bat.vy;
+
+    if (bat.y < 0 || bat.y > canvas.height) {
+      gameOver = true;
+    }
+
+    pipes.forEach(pipe => {
+      pipe.x -= speed;
+
+      if (!pipe.passed && pipe.x + pipeWidth < bat.x) {
+        score++;
+        pipe.passed = true;
+      }
+
+      if (
+        bat.x + bat.r > pipe.x &&
+        bat.x - bat.r < pipe.x + pipeWidth &&
+        (bat.y - bat.r < pipe.y - gap / 2 ||
+         bat.y + bat.r > pipe.y + gap / 2)
+      ) {
+        gameOver = true;
+      }
+    });
+
+    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+  }
+
+  function draw() {
+    // Background gradient
+    const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bg.addColorStop(0, '#020202');
+    bg.addColorStop(1, '#1a1a1a');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Bat orb with glow
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(bat.x, bat.y, bat.r, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFD700';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Pipes
+    pipes.forEach(pipe => {
+      ctx.fillStyle = '#0d0d0d';
+      ctx.fillRect(pipe.x, 0, pipeWidth, pipe.y - gap / 2);
+      ctx.fillRect(pipe.x, pipe.y + gap / 2, pipeWidth, canvas.height);
+
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(pipe.x, 0, pipeWidth, pipe.y - gap / 2);
+      ctx.strokeRect(pipe.x, pipe.y + gap / 2, pipeWidth, canvas.height);
+    });
+
+    // Score
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(score, canvas.width / 2, 60);
+
+    // Game over screen
+    if (gameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#FFD700';
+      ctx.font = '32px Arial Black';
+      ctx.fillText("Don't work too hard 🦇", canvas.width / 2, canvas.height / 2);
+
+      ctx.font = '18px Arial';
+      ctx.fillText("Tap to Try Again", canvas.width / 2, canvas.height / 2 + 40);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  loop();
+</script>
+</body>
+</html>
