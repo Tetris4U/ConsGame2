@@ -44,7 +44,6 @@
     filter: drop-shadow(0 0 2px #ffd700aa);
   }
 
-  /* Puzzle container adjusted */
   #puzzle {
     position: relative;
     width: 90vw;
@@ -60,19 +59,19 @@
 
   .tile {
     position: absolute;
-    border: 2px solid #ffd700;
+    border: 2px solid #4B0082; /* dark purple */
     box-sizing: border-box;
     cursor: pointer;
     background-image: url('https://th.bing.com/th/id/OIP.HNcDb0yoVKuoj78WAA_f0wHaEK?w=265&h=180&c=7&r=0&o=7&cb=ucfimg2&pid=1.7&rm=3&ucfimg=1');
     background-repeat: no-repeat;
-    background-size: 400% 271.6%; /* 4x4 tiles, adjusted for aspect ratio */
+    background-size: 400% 271.6%;
     transition: top 0.25s ease, left 0.25s ease;
     border-radius: 8px;
   }
 
   .empty {
-    background: #555555; /* grey for free space */
-    border: 2px dashed #999999;
+    background: #555555;
+    border: 2px dashed #4B0082; /* dark purple dashed border */
     cursor: default;
   }
 
