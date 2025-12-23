@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Slide Puzzle - Cover style tiles</title>
+<title>Classic Sliding Puzzle</title>
 <style>
   html, body {
     margin: 0; padding: 0;
@@ -57,13 +57,12 @@
 
   .tile {
     position: absolute;
-    border: 2px solid #4B0082; /* dark purple border */
+    border: 2px solid #4B0082; /* dark purple */
     box-sizing: border-box;
     cursor: pointer;
     background-image: url("https://www.teahub.io/photos/full/286-2863426_joker-wallpaper-2019-4k.jpg");
     background-repeat: no-repeat;
-    background-size: cover; /* cover each tile fully */
-    background-position: center center;
+    background-size: 400% 400%; /* 4 x 4 grid */
     transition: top 0.25s ease, left 0.25s ease;
     border-radius: 8px;
   }
@@ -136,6 +135,12 @@
       tile.classList.add('tile');
       tile.style.width = tile.style.height = tileSizePercent + '%';
 
+      const row = Math.floor(i / PUZZLE_SIZE);
+      const col = i % PUZZLE_SIZE;
+
+      // Each tile background positioned to show a unique slice of the image
+      tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * tileSizePercent}%`;
+
       tile.dataset.correctIndex = i;
       tile.dataset.currentIndex = i;
 
@@ -143,7 +148,7 @@
       tiles.push(tile);
     }
 
-    positions[positions.length - 1] = -1; // empty tile
+    positions[positions.length - 1] = -1; // last tile empty
   }
 
   function indexToPos(index) {
@@ -214,4 +219,3 @@
 
 </body>
 </html>
-
