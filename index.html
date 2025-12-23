@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Slide Puzzle</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>3x3 Sliding Puzzle</title>
 
 <style>
 html, body {
@@ -18,16 +18,9 @@ html, body {
 }
 
 /* TITLE */
-.title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 16px 0;
-}
-
 h1 {
-  font-size: 1.6rem;
-  margin: 0;
+  margin: 16px 0;
+  font-size: 1.8rem;
   animation: flip 3s ease-in-out infinite alternate;
 }
 
@@ -36,84 +29,73 @@ h1 {
   to { transform: rotateY(10deg); }
 }
 
-.bat {
-  width: 32px;
-  height: 16px;
-  fill: #ffd700;
-}
-
-/* PUZZLE */
+/* PUZZLE BOX */
 #puzzle {
   position: relative;
-  width: 92vw;
-  max-width: 520px;
-  height: 92vw;
-  max-height: 520px;
+  width: 90vw;
+  max-width: 420px;
+  height: 90vw;
+  max-height: 420px;
   background: #000;
   border: 4px solid #ffd700;
-  border-radius: 12px;
-  box-shadow: 0 0 18px #ffd70099;
+  border-radius: 14px;
+  box-shadow: 0 0 20px #ffd700aa;
   touch-action: manipulation;
 }
 
+/* TILES */
 .tile {
   position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 20px;
+  font-size: 48px;       /* BOLDER NUMBER */
+  font-weight: 900;
   color: #ffd700;
-  text-shadow: 0 0 4px black;
-  border: 2px solid #4b0082; /* dark purple */
+  text-shadow: 0 0 6px black;
+  border: 3px solid #4b0082; /* dark purple */
   box-sizing: border-box;
-  background-image: url("https://www.teahub.io/photos/full/286-2863426_joker-wallpaper-2019-4k.jpg");
-  background-repeat: no-repeat;
-  background-size: 400% 400%;
+  background: #111;
   transition: top 0.25s ease, left 0.25s ease;
 }
 
+/* EMPTY SPACE */
 .empty {
   background: #777;
-  border: 2px dashed #4b0082;
+  border: 3px dashed #4b0082;
 }
 
 /* BUTTON */
 button {
-  margin: 16px 0 30px;
-  padding: 10px 22px;
+  margin: 18px 0 30px;
+  padding: 10px 24px;
   font-size: 18px;
+  font-weight: bold;
   border-radius: 8px;
   border: none;
   background: #ffd700;
-  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 
-<div class="title">
-  <h1>Con don’t work too hard</h1>
-  <svg class="bat" viewBox="0 0 37 17">
-    <path d="M1 9c2-3 6-4 11-4 3 0 7 1 10 4 3-3 7-4 11-4-5 2-6 7-10 7-4 0-5-5-10-7z"/>
-  </svg>
-</div>
+<h1>Con don’t work too hard 🦇</h1>
 
 <div id="puzzle"></div>
 <button onclick="shuffle()">Shuffle</button>
 
 <script>
-const size = 4;
+const size = 3; // 3x3
 const puzzle = document.getElementById("puzzle");
 const percent = 100 / size;
 let positions = [];
 let tiles = [];
 
 function create() {
+  puzzle.innerHTML = "";
   positions = [];
   tiles = [];
-  puzzle.innerHTML = "";
 
   for (let i = 0; i < size * size; i++) positions.push(i);
 
@@ -121,14 +103,9 @@ function create() {
     const tile = document.createElement("div");
     tile.className = "tile";
     tile.style.width = tile.style.height = percent + "%";
+    tile.textContent = i + 1; // NUMBER ORDER
 
-    const r = Math.floor(i / size);
-    const c = i % size;
-
-    tile.style.backgroundPosition = `${c * percent}% ${r * percent}%`;
-    tile.textContent = i + 1; // NUMBERED
     tile.dataset.index = i;
-
     tile.onclick = () => move(tile);
     tile.ontouchstart = () => move(tile);
 
@@ -150,12 +127,10 @@ function update() {
     t.style.top = p.r * percent + "%";
     t.style.left = p.c * percent + "%";
   });
-
   drawEmpty();
 }
 
 function drawEmpty() {
-  const idx = positions.indexOf(-1);
   let empty = document.querySelector(".empty");
   if (!empty) {
     empty = document.createElement("div");
@@ -163,7 +138,7 @@ function drawEmpty() {
     empty.style.width = empty.style.height = percent + "%";
     puzzle.appendChild(empty);
   }
-  const p = pos(idx);
+  const p = pos(positions.indexOf(-1));
   empty.style.top = p.r * percent + "%";
   empty.style.left = p.c * percent + "%";
 }
@@ -182,7 +157,7 @@ function move(tile) {
 }
 
 function shuffle() {
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 400; i++) {
     const ei = positions.indexOf(-1);
     const { r, c } = pos(ei);
     const moves = [];
