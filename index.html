@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Flappy Bat – Adjusted Jump</title>
+<title>Flappy Bat – Phone Friendly</title>
 <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
   html, body {
@@ -25,6 +25,7 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
+  // Resize canvas to full screen with DPI handling
   function resize() {
     const dpr = window.devicePixelRatio || 1;
     canvas.width = window.innerWidth * dpr;
@@ -36,7 +37,7 @@
   resize();
   window.addEventListener('resize', resize);
 
-  // Adjusted game settings for smoother, shorter jump
+  // Game settings
   const gravity = 0.7;
   const jumpPower = -7.5;
   const speed = 3;
