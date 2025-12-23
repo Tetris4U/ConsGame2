@@ -46,7 +46,7 @@
     const gravity = 0.5;
     const jumpPower = -8;
     const starFallSpeed = 3;
-    const maxMissed = 5;
+    const maxMissed = 8;
 
     let score = 0;
     let missed = 0;
@@ -187,7 +187,7 @@
       ctx.fillText(`Score: ${score}`, 20, 50);
       ctx.fillText(`Missed: ${missed} / ${maxMissed}`, 20, 90);
 
-      // Game over screen
+      // Game over screen with your message + "Con"
       if (gameOver) {
         ctx.fillStyle = 'rgba(0,0,0,0.8)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -195,7 +195,7 @@
         ctx.fillStyle = '#FFD700';
         ctx.font = '36px Comic Sans MS, cursive, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText("Don't work too hard 🦇", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.fillText("Don't work too hard 🦇 Con", canvas.width / 2, canvas.height / 2 - 20);
 
         ctx.font = '24px Comic Sans MS, cursive, sans-serif';
         ctx.fillText("Tap to Play Again", canvas.width / 2, canvas.height / 2 + 40);
