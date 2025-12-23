@@ -3,18 +3,34 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Batman/Joker Slide Puzzle</title>
+<title>Cons Slide Puzzle</title>
 <style>
   html, body {
     margin: 0; padding: 0;
     width: 100vw; height: 100vh;
     background: linear-gradient(135deg, #000000, #1a1a1a);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
     user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    font-family: 'Arial Black', Arial, sans-serif;
+    font-family: Arial, sans-serif;
+    color: #ffd700;
+  }
+  .title-container {
+    margin: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h1 {
+    font-size: 1.8rem;
+    margin: 0;
+  }
+  svg.bat-logo {
+    width: 30px;
+    height: 15px;
+    fill: #ffd700;
+    filter: drop-shadow(0 0 2px #ffd700aa);
   }
   #puzzle {
     position: relative;
@@ -34,34 +50,9 @@
     box-sizing: border-box;
     cursor: pointer;
     background-image: url('https://th.bing.com/th/id/OIP.HNcDb0yoVKuoj78WAA_f0wHaEK?w=265&h=180&c=7&r=0&o=7&cb=ucfimg2&pid=1.7&rm=3&ucfimg=1');
-    background-size: 400% 400%; /* 4x4 tiles */
+    background-size: 400% 400%;
     transition: top 0.25s ease, left 0.25s ease;
     border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #ffd700;
-    font-weight: bold;
-    font-size: 12px;
-    padding: 2px;
-    user-select: none;
-  }
-  .tile.message-tile {
-    background-image: none !important;
-    cursor: default;
-    font-size: 13px;
-    line-height: 1.2;
-    padding: 6px 4px;
-    color: #ffd700;
-  }
-  .bat-logo {
-    width: 32px;
-    height: 16px;
-    margin-bottom: 4px;
-    fill: #ffd700;
-    filter: drop-shadow(0 0 2px #ffd700aa);
   }
   .empty {
     background: none;
@@ -71,11 +62,12 @@
   #message {
     margin-top: 20px;
     color: #ffd700;
-    font-size: 24px;
+    font-size: 20px;
     text-align: center;
   }
   button {
-    margin-top: 10px;
+    margin: 10px auto 30px;
+    display: block;
     background: #ffd700;
     border: none;
     padding: 10px 20px;
@@ -91,16 +83,19 @@
 </head>
 <body>
 
-<div>
-  <div id="puzzle"></div>
-  <div id="message"></div>
-  <div style="text-align:center;">
-    <button id="shuffleBtn">Shuffle Puzzle</button>
-  </div>
+<div class="title-container">
+  <h1>Con don't work too hard</h1>
+  <svg class="bat-logo" viewBox="0 0 37 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <path d="M1 9c2-3 6-4 11-4 3 0 7 1 10 4 3-3 7-4 11-4-5 2-6 7-10 7-4 0-5-5-10-7z"/>
+  </svg>
 </div>
 
+<div id="puzzle"></div>
+<div id="message"></div>
+<button id="shuffleBtn">Shuffle Puzzle</button>
+
 <script>
-  const PUZZLE_SIZE = 4; // 4x4 grid
+  const PUZZLE_SIZE = 4;
   const puzzle = document.getElementById('puzzle');
   const message = document.getElementById('message');
   const shuffleBtn = document.getElementById('shuffleBtn');
@@ -109,19 +104,6 @@
 
   let positions = [];
   let tiles = [];
-
-  function createBatLogoSVG() {
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("viewBox", "0 0 37 17");
-    svg.classList.add('bat-logo');
-
-    // Bat shape path from a simple batman silhouette
-    const path = document.createElementNS(svgNS, "path");
-    path.setAttribute("d", "M1 9c2-3 6-4 11-4 3 0 7 1 10 4 3-3 7-4 11-4-5 2-6 7-10 7-4 0-5-5-10-7z");
-    svg.appendChild(path);
-    return svg;
-  }
 
   function createTiles() {
     puzzle.innerHTML = '';
@@ -135,29 +117,11 @@
     for (let i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE - 1; i++) {
       const tile = document.createElement('div');
       tile.classList.add('tile');
-
-      // Special tile with message + bat logo on tile #14 (index 14)
-      if (i === 14) {
-        tile.classList.add('message-tile');
-        // Add bat logo SVG
-        const batLogo = createBatLogoSVG();
-        tile.appendChild(batLogo);
-        // Add message text lines
-        const lines = ["Con", "Don't", "work", "too", "hard"];
-        lines.forEach(line => {
-          const span = document.createElement('div');
-          span.textContent = line;
-          tile.appendChild(span);
-        });
-      } else {
-        tile.style.backgroundImage = "url('https://th.bing.com/th/id/OIP.HNcDb0yoVKuoj78WAA_f0wHaEK?w=265&h=180&c=7&r=0&o=7&cb=ucfimg2&pid=1.7&rm=3&ucfimg=1')";
-        tile.style.backgroundSize = '400% 400%';
-        const row = Math.floor(i / PUZZLE_SIZE);
-        const col = i % PUZZLE_SIZE;
-        tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * tileSizePercent}%`;
-      }
-
       tile.style.width = tile.style.height = tileSizePercent + '%';
+
+      const row = Math.floor(i / PUZZLE_SIZE);
+      const col = i % PUZZLE_SIZE;
+      tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * tileSizePercent}%`;
 
       tile.dataset.correctIndex = i;
       tile.dataset.currentIndex = i;
