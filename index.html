@@ -2,28 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Cons Game</title>
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Batman Bat Catch</title>
 <style>
   html, body {
     margin: 0; padding: 0;
     width: 100vw; height: 100vh;
     overflow: hidden;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    color: white;
+    background: linear-gradient(135deg, #000000, #1a1a1a);
+    font-family: 'Arial Black', Arial, sans-serif;
+    color: #ffd700; /* Batman yellow */
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     touch-action: none;
+    box-sizing: border-box;
+  }
+  body {
+    padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 10px) env(safe-area-inset-bottom, 10px) env(safe-area-inset-left, 10px);
   }
   canvas {
     display: block;
-    margin: 0 auto;
-    background: #281557;
+    width: 100%;
+    height: 100%;
     border-radius: 12px;
-    box-shadow: 0 0 30px #fff3;
-    width: 100vw;
-    height: 100vh;
+    box-shadow: 0 0 30px #ffd700aa;
+    touch-action: none;
+    background: #120a30; /* dark purple */
   }
 </style>
 </head>
@@ -35,47 +39,57 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
-  // Setup canvas size for device pixel ratio
   function resize() {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
+    const style = getComputedStyle(document.body);
+    const safeTop = parseFloat(style.paddingTop) || 10;
+    const safeBottom = parseFloat(style.paddingBottom) || 10;
+    const safeLeft = parseFloat(style.paddingLeft) || 10;
+    const safeRight = parseFloat(style.paddingRight) || 10;
+
+    const width = window.innerWidth - safeLeft - safeRight;
+    const height = window.innerHeight - safeTop - safeBottom;
+
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    bat.y = canvas.height - 80;
+    bat.targetX = Math.min(Math.max(bat.targetX, bat.radius), canvas.width - bat.radius);
+    bat.x = bat.targetX;
   }
-  resize();
   window.addEventListener('resize', resize);
 
-  // Bat player
+  // Bat player (a yellow bat circle with bat wings)
   const bat = {
-    x: canvas.width / 2,
-    y: canvas.height - 60,
-    width: 60,
-    height: 30,
+    x: 0,
+    y: 0,
+    radius: 30,
     speed: 8,
-    targetX: canvas.width / 2
+    targetX: 0
   };
 
-  // Hearts falling
-  const hearts = [];
-  const heartRadius = 15;
-  const heartSpeed = 3;
+  // Falling balls (glowing yellow orbs)
+  const balls = [];
+  const ballRadius = 15;
+  const ballSpeed = 3;
   const maxMissed = 5;
   let score = 0;
   let missed = 0;
   let gameOver = false;
 
-  // Spawn hearts every 1.2 seconds
-  function spawnHeart() {
-    const x = Math.random() * (canvas.width - heartRadius * 2) + heartRadius;
-    hearts.push({ x, y: -heartRadius, radius: heartRadius });
+  function spawnBall() {
+    const x = Math.random() * (canvas.width - ballRadius * 2) + ballRadius;
+    balls.push({ x, y: -ballRadius, radius: ballRadius });
   }
   setInterval(() => {
-    if (!gameOver) spawnHeart();
+    if (!gameOver) spawnBall();
   }, 1200);
 
-  // Move bat toward targetX smoothly
   function moveBat() {
     const dx = bat.targetX - bat.x;
     if (Math.abs(dx) > 1) {
@@ -83,7 +97,6 @@
     }
   }
 
-  // On tap, move bat left or right depending on touch position
   function handleTap(e) {
     e.preventDefault();
     if (gameOver) {
@@ -92,146 +105,138 @@
     }
     let x = e.touches ? e.touches[0].clientX : e.clientX;
     if (x < window.innerWidth / 2) {
-      // Move left
-      bat.targetX = Math.max(bat.x - bat.speed * 3, bat.width / 2);
+      bat.targetX = Math.max(bat.x - bat.speed * 3, bat.radius);
     } else {
-      // Move right
-      bat.targetX = Math.min(bat.x + bat.speed * 3, canvas.width - bat.width / 2);
+      bat.targetX = Math.min(bat.x + bat.speed * 3, canvas.width - bat.radius);
     }
   }
   document.addEventListener('touchstart', handleTap, { passive: false });
   document.addEventListener('mousedown', handleTap);
 
-  // Reset game state
   function resetGame() {
     score = 0;
     missed = 0;
-    hearts.length = 0;
+    balls.length = 0;
     gameOver = false;
     bat.x = canvas.width / 2;
-    bat.targetX = canvas.width / 2;
+    bat.targetX = bat.x;
   }
 
-  // Update game state
   function update() {
     if (gameOver) return;
 
     moveBat();
 
-    for (let i = hearts.length - 1; i >= 0; i--) {
-      hearts[i].y += heartSpeed;
+    for (let i = balls.length - 1; i >= 0; i--) {
+      balls[i].y += ballSpeed;
 
-      // Check collision (circle to rect)
-      const dx = Math.abs(hearts[i].x - bat.x);
-      const dy = Math.abs(hearts[i].y - bat.y);
-      if (dx < bat.width / 2 + hearts[i].radius && dy < bat.height / 2 + hearts[i].radius) {
-        hearts.splice(i, 1);
+      const dx = Math.abs(balls[i].x - bat.x);
+      const dy = Math.abs(balls[i].y - bat.y);
+
+      if (dx < bat.radius + balls[i].radius && dy < bat.radius + balls[i].radius) {
+        balls.splice(i, 1);
         score++;
         continue;
       }
 
-      // Remove heart if missed
-      if (hearts[i].y - hearts[i].radius > canvas.height) {
-        hearts.splice(i, 1);
+      if (balls[i].y - balls[i].radius > canvas.height) {
+        balls.splice(i, 1);
         missed++;
         if (missed >= maxMissed) gameOver = true;
       }
     }
   }
 
-  // Draw heart shape
-  function drawHeart(x, y, size, color) {
-    ctx.fillStyle = color;
+  function drawBall(x, y, radius) {
+    const gradient = ctx.createRadialGradient(x, y, radius * 0.3, x, y, radius);
+    gradient.addColorStop(0, '#fff758'); // bright yellow center
+    gradient.addColorStop(1, '#b39900'); // darker yellow edge
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 15;
     ctx.beginPath();
-    const topCurveHeight = size * 0.3;
-    ctx.moveTo(x, y + topCurveHeight);
-    ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
-    ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + (size + topCurveHeight) / 1.5, x, y + size);
-    ctx.bezierCurveTo(x, y + (size + topCurveHeight) / 1.5, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
-    ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
-    ctx.closePath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.shadowBlur = 0;
   }
 
-  // Draw simple cute bat
   function drawBat() {
-    // Wings (purple)
-    ctx.fillStyle = '#6b3a96';
+    // Bat wings shape - black with yellow border
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(bat.x - bat.width / 2, bat.y);
-    ctx.lineTo(bat.x - bat.width / 4, bat.y - bat.height);
-    ctx.lineTo(bat.x - bat.width / 8, bat.y);
-    ctx.lineTo(bat.x, bat.y - bat.height / 2);
-    ctx.lineTo(bat.x + bat.width / 8, bat.y);
-    ctx.lineTo(bat.x + bat.width / 4, bat.y - bat.height);
-    ctx.lineTo(bat.x + bat.width / 2, bat.y);
+    ctx.moveTo(bat.x - bat.radius, bat.y);
+    ctx.lineTo(bat.x - bat.radius / 2, bat.y - bat.radius);
+    ctx.lineTo(bat.x - bat.radius / 4, bat.y);
+    ctx.lineTo(bat.x, bat.y - bat.radius / 2);
+    ctx.lineTo(bat.x + bat.radius / 4, bat.y);
+    ctx.lineTo(bat.x + bat.radius / 2, bat.y - bat.radius);
+    ctx.lineTo(bat.x + bat.radius, bat.y);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
 
-    // Body (lighter purple)
-    ctx.fillStyle = '#a67ee3';
+    // Bat body - yellow circle in center
+    ctx.fillStyle = '#ffd700';
     ctx.beginPath();
-    ctx.ellipse(bat.x, bat.y - bat.height / 4, bat.width / 6, bat.height / 2, 0, 0, Math.PI * 2);
+    ctx.arc(bat.x, bat.y - bat.radius / 4, bat.radius / 2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Eyes (white)
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.ellipse(bat.x - 8, bat.y - bat.height / 4, 5, 7, 0, 0, Math.PI * 2);
-    ctx.ellipse(bat.x + 8, bat.y - bat.height / 4, 5, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Pupils (black)
+    // Eyes - black small circles
     ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.ellipse(bat.x - 8, bat.y - bat.height / 4, 2, 3, 0, 0, Math.PI * 2);
-    ctx.ellipse(bat.x + 8, bat.y - bat.height / 4, 2, 3, 0, 0, Math.PI * 2);
+    ctx.arc(bat.x - bat.radius / 5, bat.y - bat.radius / 4, bat.radius / 10, 0, Math.PI * 2);
+    ctx.arc(bat.x + bat.radius / 5, bat.y - bat.radius / 4, bat.radius / 10, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Draw game elements
   function draw() {
-    // Background gradient
+    // Background dark purple gradient
     const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    bg.addColorStop(0, '#6a11cb');
-    bg.addColorStop(1, '#2575fc');
+    bg.addColorStop(0, '#120a30');
+    bg.addColorStop(1, '#000000');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw hearts
-    hearts.forEach(h => drawHeart(h.x, h.y, h.radius * 2, '#ff6b81'));
+    // Draw falling balls
+    balls.forEach(b => drawBall(b.x, b.y, b.radius));
 
-    // Draw bat
+    // Draw bat player
     drawBat();
 
-    // Draw score and missed
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 28px Comic Sans MS, cursive, sans-serif';
+    // Score and misses
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 28px Arial Black, Arial, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(`Score: ${score}`, 20, 40);
     ctx.fillText(`Missed: ${missed} / ${maxMissed}`, 20, 80);
 
-    // Game over overlay
+    // Game over screen
     if (gameOver) {
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = '#ff6b81';
-      ctx.font = '36px Comic Sans MS, cursive, sans-serif';
+      ctx.fillStyle = '#ffd700';
+      ctx.font = '36px Arial Black, Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText("Oh no! Too many missed hearts!", canvas.width / 2, canvas.height / 2 - 20);
-      ctx.fillText("Tap to try again 💖", canvas.width / 2, canvas.height / 2 + 40);
+      ctx.fillText("Too many missed balls!", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillText("Tap to try again 🦇", canvas.width / 2, canvas.height / 2 + 40);
     }
   }
 
-  // Game loop
   function loop() {
     if (!gameOver) update();
     draw();
     requestAnimationFrame(loop);
   }
+
+  // Start
+  resize();
+  resetGame();
   loop();
 </script>
 
 </body>
 </html>
+
