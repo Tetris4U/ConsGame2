@@ -44,13 +44,13 @@
     filter: drop-shadow(0 0 2px #ffd700aa);
   }
 
-  /* Adjust puzzle container to match image aspect ratio (~1.47) */
+  /* Puzzle container adjusted */
   #puzzle {
     position: relative;
     width: 90vw;
-    max-width: 400px;
-    height: calc(90vw / 1.47); /* width divided by aspect ratio */
-    max-height: calc(400px / 1.47);
+    max-width: 450px;
+    height: calc(90vw / 1.47);
+    max-height: calc(450px / 1.47);
     border: 4px solid #ffd700;
     border-radius: 12px;
     background: #000;
@@ -65,15 +65,14 @@
     cursor: pointer;
     background-image: url('https://th.bing.com/th/id/OIP.HNcDb0yoVKuoj78WAA_f0wHaEK?w=265&h=180&c=7&r=0&o=7&cb=ucfimg2&pid=1.7&rm=3&ucfimg=1');
     background-repeat: no-repeat;
-    /* background size matches image size relative to puzzle container */
-    background-size: 400% 271.6%; /* 4x4 tiles, height adjusted: 271.6% = 4 * (100 / 1.47) */
+    background-size: 400% 271.6%; /* 4x4 tiles, adjusted for aspect ratio */
     transition: top 0.25s ease, left 0.25s ease;
     border-radius: 8px;
   }
 
   .empty {
-    background: #ffd700; /* bright yellow for empty tile */
-    border: 2px dashed #000;
+    background: #555555; /* grey for free space */
+    border: 2px dashed #999999;
     cursor: default;
   }
 
@@ -140,7 +139,6 @@
       tile.classList.add('tile');
       tile.style.width = tile.style.height = tileSizePercent + '%';
 
-      // Set background position for the tile piece
       const row = Math.floor(i / PUZZLE_SIZE);
       const col = i % PUZZLE_SIZE;
       tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * (100 / 1.47)}%`;
@@ -152,7 +150,7 @@
       tiles.push(tile);
     }
 
-    positions[positions.length - 1] = -1; // empty space
+    positions[positions.length - 1] = -1;
   }
 
   function indexToPos(index) {
