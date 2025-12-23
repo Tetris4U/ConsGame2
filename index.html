@@ -2,7 +2,7 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8" />
-  <title>Cute Batman Catch Game</title>
+  <title>Cute Batman Catch Game (Phone Only)</title>
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
     html, body {
@@ -10,27 +10,53 @@
       width: 100%; height: 100%;
       overflow: hidden;
       background: linear-gradient(to bottom, #020202, #1a1a1a);
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
       font-family: 'Comic Sans MS', cursive, sans-serif;
       color: #FFD700;
       user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    canvas {
+    #gameCanvas {
       display: block;
       width: 100vw;
       height: 100vh;
       background: transparent;
+      touch-action: none;
+    }
+    #desktopMessage {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      color: #FFD700;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <canvas id="game"></canvas>
-  <script>
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
 
-    // Resize canvas for high DPI and full screen
+<canvas id="gameCanvas"></canvas>
+<div id="desktopMessage">Please open this game on your phone to play. 🦇</div>
+
+<script>
+  const isPhone = window.matchMedia("(max-width: 768px)").matches;
+  const canvas = document.getElementById('gameCanvas');
+  const desktopMsg = document.getElementById('desktopMessage');
+  const ctx = canvas.getContext('2d');
+
+  if (!isPhone) {
+    // Show message and hide canvas on desktop
+    canvas.style.display = 'none';
+    desktopMsg.style.display = 'flex';
+  } else {
+    desktopMsg.style.display = 'none';
+    canvas.style.display = 'block';
+
+    // Setup canvas size for phone screen
     function resize() {
       const dpr = window.devicePixelRatio || 1;
       canvas.width = window.innerWidth * dpr;
@@ -72,7 +98,7 @@
       if (!gameOver) spawnStar();
     }, 1300);
 
-    // Handle tap/click to jump bat orb up
+    // Handle touch tap to jump bat orb up
     function tap(e) {
       e.preventDefault();
       if (gameOver) {
@@ -82,7 +108,6 @@
       bat.vy = jumpPower;
     }
     document.addEventListener('touchstart', tap, { passive: false });
-    document.addEventListener('mousedown', tap);
 
     // Reset game state
     function reset() {
@@ -187,7 +212,7 @@
       ctx.fillText(`Score: ${score}`, 20, 50);
       ctx.fillText(`Missed: ${missed} / ${maxMissed}`, 20, 90);
 
-      // Game over screen with your message + "Con"
+      // Game over screen with message + "Con"
       if (gameOver) {
         ctx.fillStyle = 'rgba(0,0,0,0.8)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -209,6 +234,8 @@
       requestAnimationFrame(loop);
     }
     loop();
-  </script>
+  }
+</script>
+
 </body>
 </html>
