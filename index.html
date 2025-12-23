@@ -1,172 +1,214 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
-<meta charset="UTF-8" />
-<title>Flappy Bat – Phone Friendly</title>
-<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<style>
-  html, body {
-    margin: 0; padding: 0;
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: black;
-    touch-action: none;
-  }
-  canvas {
-    display: block;
-    width: 100vw;
-    height: 100vh;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Cute Batman Catch Game</title>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #020202, #1a1a1a);
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      color: #FFD700;
+      user-select: none;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+    }
+  </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<script>
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
 
-  // Resize canvas to full screen with DPI handling
-  function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  // Game settings
-  const gravity = 0.7;
-  const jumpPower = -7.5;
-  const speed = 3;
-  const gap = 150;
-  const pipeWidth = 70;
-
-  let score = 0;
-  let gameOver = false;
-
-  const bat = {
-    x: canvas.width / 4,
-    y: canvas.height / 2,
-    r: 14,
-    vy: 0
-  };
-
-  let pipes = [];
-
-  function spawnPipe() {
-    const y = Math.random() * (canvas.height - 280) + 140;
-    pipes.push({ x: canvas.width, y, passed: false });
-  }
-  setInterval(spawnPipe, 1700);
-
-  function flap(e) {
-    e.preventDefault();
-    if (gameOver) {
-      reset();
-      return;
+    // Resize canvas for high DPI and full screen
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
-    bat.vy = jumpPower;
-  }
-  document.addEventListener('touchstart', flap, { passive: false });
-  document.addEventListener('mousedown', flap);
+    resize();
+    window.addEventListener('resize', resize);
 
-  function reset() {
-    score = 0;
-    pipes = [];
-    bat.y = canvas.height / 2;
-    bat.vy = 0;
-    gameOver = false;
-  }
+    // Game variables
+    const gravity = 0.5;
+    const jumpPower = -8;
+    const starFallSpeed = 3;
+    const maxMissed = 5;
 
-  function update() {
-    if (gameOver) return;
+    let score = 0;
+    let missed = 0;
+    let gameOver = false;
 
-    bat.vy += gravity;
-    bat.y += bat.vy;
+    // Bat orb player
+    const bat = {
+      x: canvas.width / 2,
+      y: canvas.height - 80,
+      radius: 20,
+      vy: 0
+    };
 
-    if (bat.y < 0 || bat.y > canvas.height) {
-      gameOver = true;
+    // Stars to catch
+    let stars = [];
+
+    // Spawn stars falling from random x positions
+    function spawnStar() {
+      const x = Math.random() * (canvas.width - 40) + 20;
+      stars.push({ x, y: -20, radius: 12 });
+    }
+    setInterval(() => {
+      if (!gameOver) spawnStar();
+    }, 1300);
+
+    // Handle tap/click to jump bat orb up
+    function tap(e) {
+      e.preventDefault();
+      if (gameOver) {
+        reset();
+        return;
+      }
+      bat.vy = jumpPower;
+    }
+    document.addEventListener('touchstart', tap, { passive: false });
+    document.addEventListener('mousedown', tap);
+
+    // Reset game state
+    function reset() {
+      score = 0;
+      missed = 0;
+      stars = [];
+      bat.y = canvas.height - 80;
+      bat.vy = 0;
+      gameOver = false;
     }
 
-    pipes.forEach(pipe => {
-      pipe.x -= speed;
+    // Update game logic
+    function update() {
+      if (gameOver) return;
 
-      if (!pipe.passed && pipe.x + pipeWidth < bat.x) {
-        score++;
-        pipe.passed = true;
+      // Bat physics
+      bat.vy += gravity;
+      bat.y += bat.vy;
+
+      // Keep bat inside bottom half of screen
+      if (bat.y > canvas.height - bat.radius) {
+        bat.y = canvas.height - bat.radius;
+        bat.vy = 0;
+      }
+      if (bat.y < canvas.height / 2) {
+        bat.y = canvas.height / 2;
+        bat.vy = 0;
       }
 
-      if (
-        bat.x + bat.r > pipe.x &&
-        bat.x - bat.r < pipe.x + pipeWidth &&
-        (bat.y - bat.r < pipe.y - gap / 2 ||
-         bat.y + bat.r > pipe.y + gap / 2)
-      ) {
-        gameOver = true;
+      // Update stars falling
+      for (let i = stars.length - 1; i >= 0; i--) {
+        stars[i].y += starFallSpeed;
+
+        // Check if bat caught the star (circle collision)
+        const dx = bat.x - stars[i].x;
+        const dy = bat.y - stars[i].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < bat.radius + stars[i].radius) {
+          stars.splice(i, 1);
+          score++;
+          continue;
+        }
+
+        // Remove star if missed (fell off screen)
+        if (stars[i].y - stars[i].radius > canvas.height) {
+          stars.splice(i, 1);
+          missed++;
+          if (missed >= maxMissed) gameOver = true;
+        }
       }
-    });
+    }
 
-    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
-  }
-
-  function draw() {
-    // Background gradient
-    const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    bg.addColorStop(0, '#020202');
-    bg.addColorStop(1, '#1a1a1a');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Bat orb with glow
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = '#FFD700';
-    ctx.beginPath();
-    ctx.arc(bat.x, bat.y, bat.r, 0, Math.PI * 2);
-    ctx.fillStyle = '#FFD700';
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Pipes
-    pipes.forEach(pipe => {
-      ctx.fillStyle = '#0d0d0d';
-      ctx.fillRect(pipe.x, 0, pipeWidth, pipe.y - gap / 2);
-      ctx.fillRect(pipe.x, pipe.y + gap / 2, pipeWidth, canvas.height);
-
-      ctx.strokeStyle = '#FFD700';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(pipe.x, 0, pipeWidth, pipe.y - gap / 2);
-      ctx.strokeRect(pipe.x, pipe.y + gap / 2, pipeWidth, canvas.height);
-    });
-
-    // Score
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 32px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(score, canvas.width / 2, 60);
-
-    // Game over screen
-    if (gameOver) {
-      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    // Draw everything
+    function draw() {
+      // Gotham background gradient
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#020202');
+      bg.addColorStop(1, '#1a1a1a');
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Draw bat orb with glow and cute smiley face
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(bat.x, bat.y, bat.radius, 0, Math.PI * 2);
       ctx.fillStyle = '#FFD700';
-      ctx.font = '32px Arial Black';
-      ctx.fillText("Don't work too hard 🦇", canvas.width / 2, canvas.height / 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
-      ctx.font = '18px Arial';
-      ctx.fillText("Tap to Try Again", canvas.width / 2, canvas.height / 2 + 40);
+      // Smiley eyes
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(bat.x - 7, bat.y - 6, 4, 0, Math.PI * 2);
+      ctx.arc(bat.x + 7, bat.y - 6, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Smiley mouth
+      ctx.beginPath();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.arc(bat.x, bat.y + 5, 10, 0, Math.PI);
+      ctx.stroke();
+
+      // Draw stars as glowing gold circles
+      stars.forEach(star => {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFD700';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      // Score and misses display
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 32px Comic Sans MS, cursive, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`Score: ${score}`, 20, 50);
+      ctx.fillText(`Missed: ${missed} / ${maxMissed}`, 20, 90);
+
+      // Game over screen
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#FFD700';
+        ctx.font = '36px Comic Sans MS, cursive, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText("Don't work too hard 🦇", canvas.width / 2, canvas.height / 2 - 20);
+
+        ctx.font = '24px Comic Sans MS, cursive, sans-serif';
+        ctx.fillText("Tap to Play Again", canvas.width / 2, canvas.height / 2 + 40);
+      }
     }
-  }
 
-  function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-  }
-  loop();
-</script>
+    // Main game loop
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
 </body>
 </html>
