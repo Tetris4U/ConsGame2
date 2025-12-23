@@ -2,239 +2,220 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Batman Bat Catch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Batman Slide Puzzle</title>
 <style>
   html, body {
     margin: 0; padding: 0;
     width: 100vw; height: 100vh;
-    overflow: hidden;
     background: linear-gradient(135deg, #000000, #1a1a1a);
-    font-family: 'Arial Black', Arial, sans-serif;
-    color: #ffd700; /* Batman yellow */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    touch-action: none;
-    box-sizing: border-box;
+    font-family: 'Arial Black', Arial, sans-serif;
   }
-  body {
-    padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 10px) env(safe-area-inset-bottom, 10px) env(safe-area-inset-left, 10px);
-  }
-  canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
+  #puzzle {
+    position: relative;
+    width: 90vw;
+    max-width: 400px;
+    height: 90vw;
+    max-height: 400px;
+    border: 4px solid #ffd700;
     border-radius: 12px;
-    box-shadow: 0 0 30px #ffd700aa;
-    touch-action: none;
-    background: #120a30; /* dark purple */
+    background: #120a30;
+    box-shadow: 0 0 20px #ffd700aa;
+    touch-action: manipulation;
+  }
+  .tile {
+    position: absolute;
+    border: 2px solid #ffd700;
+    box-sizing: border-box;
+    cursor: pointer;
+    background-image: url('https://i.imgur.com/ypf5k1P.png'); /* Batman silhouette */
+    background-size: 400% 400%; /* 4x4 tiles */
+    transition: top 0.25s ease, left 0.25s ease;
+    border-radius: 8px;
+  }
+  .empty {
+    background: none;
+    border: none;
+    cursor: default;
+  }
+  #message {
+    margin-top: 20px;
+    color: #ffd700;
+    font-size: 24px;
+    text-align: center;
+  }
+  button {
+    margin-top: 10px;
+    background: #ffd700;
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #e6c200;
   }
 </style>
 </head>
 <body>
 
-<canvas id="game"></canvas>
+<div>
+  <div id="puzzle"></div>
+  <div id="message"></div>
+  <div style="text-align:center;">
+    <button id="shuffleBtn">Shuffle Puzzle</button>
+  </div>
+</div>
 
 <script>
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
+  const PUZZLE_SIZE = 4; // 4x4 grid
+  const puzzle = document.getElementById('puzzle');
+  const message = document.getElementById('message');
+  const shuffleBtn = document.getElementById('shuffleBtn');
 
-  function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    const style = getComputedStyle(document.body);
-    const safeTop = parseFloat(style.paddingTop) || 10;
-    const safeBottom = parseFloat(style.paddingBottom) || 10;
-    const safeLeft = parseFloat(style.paddingLeft) || 10;
-    const safeRight = parseFloat(style.paddingRight) || 10;
+  const tileSizePercent = 100 / PUZZLE_SIZE;
 
-    const width = window.innerWidth - safeLeft - safeRight;
-    const height = window.innerHeight - safeTop - safeBottom;
+  // Positions array: holds current tile positions, last is empty spot
+  let positions = [];
+  // Array of tile elements
+  let tiles = [];
 
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
+  // Initialize puzzle
+  function createTiles() {
+    puzzle.innerHTML = '';
+    positions = [];
+    tiles = [];
 
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    for (let i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; i++) {
+      positions.push(i);
+    }
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (let i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE - 1; i++) {
+      const tile = document.createElement('div');
+      tile.classList.add('tile');
+      tile.style.width = tile.style.height = tileSizePercent + '%';
 
-    bat.y = canvas.height - 80;
-    bat.targetX = Math.min(Math.max(bat.targetX, bat.radius), canvas.width - bat.radius);
-    bat.x = bat.targetX;
+      // Set background position to show correct piece of image
+      const row = Math.floor(i / PUZZLE_SIZE);
+      const col = i % PUZZLE_SIZE;
+      tile.style.backgroundPosition = `${col * tileSizePercent}% ${row * tileSizePercent}%`;
+
+      tile.dataset.correctIndex = i;
+      tile.dataset.currentIndex = i;
+
+      puzzle.appendChild(tile);
+      tiles.push(tile);
+    }
+
+    // Add empty tile representation (no element, but track position)
+    positions[positions.length - 1] = -1;
   }
-  window.addEventListener('resize', resize);
 
-  // Bat player (a yellow bat circle with bat wings)
-  const bat = {
-    x: 0,
-    y: 0,
-    radius: 30,
-    speed: 8,
-    targetX: 0
-  };
-
-  // Falling balls (glowing yellow orbs)
-  const balls = [];
-  const ballRadius = 15;
-  const ballSpeed = 3;
-  const maxMissed = 5;
-  let score = 0;
-  let missed = 0;
-  let gameOver = false;
-
-  function spawnBall() {
-    const x = Math.random() * (canvas.width - ballRadius * 2) + ballRadius;
-    balls.push({ x, y: -ballRadius, radius: ballRadius });
+  // Get row and col from index
+  function indexToPos(index) {
+    return { row: Math.floor(index / PUZZLE_SIZE), col: index % PUZZLE_SIZE };
   }
-  setInterval(() => {
-    if (!gameOver) spawnBall();
-  }, 1200);
 
-  function moveBat() {
-    const dx = bat.targetX - bat.x;
-    if (Math.abs(dx) > 1) {
-      bat.x += dx * 0.25;
+  // Move tile to a specific position (index)
+  function moveTile(tile, positionIndex) {
+    const pos = indexToPos(positionIndex);
+    tile.style.top = (pos.row * tileSizePercent) + '%';
+    tile.style.left = (pos.col * tileSizePercent) + '%';
+    tile.dataset.currentIndex = positionIndex;
+  }
+
+  // Update all tiles positions according to positions array
+  function updateTiles() {
+    for (let i = 0; i < tiles.length; i++) {
+      const posIndex = positions.indexOf(i);
+      moveTile(tiles[i], posIndex);
     }
   }
 
-  function handleTap(e) {
-    e.preventDefault();
-    if (gameOver) {
-      resetGame();
-      return;
-    }
-    let x = e.touches ? e.touches[0].clientX : e.clientX;
-    if (x < window.innerWidth / 2) {
-      bat.targetX = Math.max(bat.x - bat.speed * 3, bat.radius);
-    } else {
-      bat.targetX = Math.min(bat.x + bat.speed * 3, canvas.width - bat.radius);
-    }
-  }
-  document.addEventListener('touchstart', handleTap, { passive: false });
-  document.addEventListener('mousedown', handleTap);
-
-  function resetGame() {
-    score = 0;
-    missed = 0;
-    balls.length = 0;
-    gameOver = false;
-    bat.x = canvas.width / 2;
-    bat.targetX = bat.x;
+  // Check if two positions are adjacent (up/down/left/right)
+  function isAdjacent(index1, index2) {
+    if (index1 === -1 || index2 === -1) return false;
+    const pos1 = indexToPos(index1);
+    const pos2 = indexToPos(index2);
+    const dRow = Math.abs(pos1.row - pos2.row);
+    const dCol = Math.abs(pos1.col - pos2.col);
+    return (dRow + dCol) === 1;
   }
 
-  function update() {
-    if (gameOver) return;
+  // Handle tile click/tap
+  function onTileClick(e) {
+    const tile = e.currentTarget;
+    const tileIndex = parseInt(tile.dataset.currentIndex);
+    const emptyIndex = positions.indexOf(-1);
 
-    moveBat();
-
-    for (let i = balls.length - 1; i >= 0; i--) {
-      balls[i].y += ballSpeed;
-
-      const dx = Math.abs(balls[i].x - bat.x);
-      const dy = Math.abs(balls[i].y - bat.y);
-
-      if (dx < bat.radius + balls[i].radius && dy < bat.radius + balls[i].radius) {
-        balls.splice(i, 1);
-        score++;
-        continue;
-      }
-
-      if (balls[i].y - balls[i].radius > canvas.height) {
-        balls.splice(i, 1);
-        missed++;
-        if (missed >= maxMissed) gameOver = true;
+    if (isAdjacent(tileIndex, emptyIndex)) {
+      // Swap positions in array
+      positions[emptyIndex] = positions[tileIndex];
+      positions[tileIndex] = -1;
+      updateTiles();
+      if (isSolved()) {
+        message.textContent = "🎉 You solved the puzzle! 🦇";
+      } else {
+        message.textContent = '';
       }
     }
   }
 
-  function drawBall(x, y, radius) {
-    const gradient = ctx.createRadialGradient(x, y, radius * 0.3, x, y, radius);
-    gradient.addColorStop(0, '#fff758'); // bright yellow center
-    gradient.addColorStop(1, '#b39900'); // darker yellow edge
-    ctx.fillStyle = gradient;
-    ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur = 15;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  }
+  // Shuffle puzzle by making valid random moves
+  function shufflePuzzle(moves = 1000) {
+    let emptyIndex = positions.indexOf(-1);
 
-  function drawBat() {
-    // Bat wings shape - black with yellow border
-    ctx.fillStyle = '#000000';
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(bat.x - bat.radius, bat.y);
-    ctx.lineTo(bat.x - bat.radius / 2, bat.y - bat.radius);
-    ctx.lineTo(bat.x - bat.radius / 4, bat.y);
-    ctx.lineTo(bat.x, bat.y - bat.radius / 2);
-    ctx.lineTo(bat.x + bat.radius / 4, bat.y);
-    ctx.lineTo(bat.x + bat.radius / 2, bat.y - bat.radius);
-    ctx.lineTo(bat.x + bat.radius, bat.y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    for (let i = 0; i < moves; i++) {
+      const neighbors = [];
+      const emptyPos = indexToPos(emptyIndex);
 
-    // Bat body - yellow circle in center
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath();
-    ctx.arc(bat.x, bat.y - bat.radius / 4, bat.radius / 2, 0, Math.PI * 2);
-    ctx.fill();
+      // Find neighbors (up/down/left/right)
+      if (emptyPos.row > 0) neighbors.push(emptyIndex - PUZZLE_SIZE);
+      if (emptyPos.row < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + PUZZLE_SIZE);
+      if (emptyPos.col > 0) neighbors.push(emptyIndex - 1);
+      if (emptyPos.col < PUZZLE_SIZE - 1) neighbors.push(emptyIndex + 1);
 
-    // Eyes - black small circles
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(bat.x - bat.radius / 5, bat.y - bat.radius / 4, bat.radius / 10, 0, Math.PI * 2);
-    ctx.arc(bat.x + bat.radius / 5, bat.y - bat.radius / 4, bat.radius / 10, 0, Math.PI * 2);
-    ctx.fill();
-  }
+      // Pick random neighbor to swap
+      const randIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
 
-  function draw() {
-    // Background dark purple gradient
-    const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    bg.addColorStop(0, '#120a30');
-    bg.addColorStop(1, '#000000');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw falling balls
-    balls.forEach(b => drawBall(b.x, b.y, b.radius));
-
-    // Draw bat player
-    drawBat();
-
-    // Score and misses
-    ctx.fillStyle = '#ffd700';
-    ctx.font = 'bold 28px Arial Black, Arial, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Score: ${score}`, 20, 40);
-    ctx.fillText(`Missed: ${missed} / ${maxMissed}`, 20, 80);
-
-    // Game over screen
-    if (gameOver) {
-      ctx.fillStyle = 'rgba(0,0,0,0.8)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = '#ffd700';
-      ctx.font = '36px Arial Black, Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText("Too many missed balls!", canvas.width / 2, canvas.height / 2 - 20);
-      ctx.fillText("Tap to try again 🦇", canvas.width / 2, canvas.height / 2 + 40);
+      // Swap empty and neighbor
+      positions[emptyIndex] = positions[randIndex];
+      positions[randIndex] = -1;
+      emptyIndex = randIndex;
     }
+    updateTiles();
+    message.textContent = '';
   }
 
-  function loop() {
-    if (!gameOver) update();
-    draw();
-    requestAnimationFrame(loop);
+  // Check if puzzle solved
+  function isSolved() {
+    for (let i = 0; i < positions.length - 1; i++) {
+      if (positions[i] !== i) return false;
+    }
+    return true;
   }
 
-  // Start
-  resize();
-  resetGame();
-  loop();
+  // Setup
+  createTiles();
+  updateTiles();
+
+  // Add event listeners for tiles
+  tiles.forEach(tile => tile.addEventListener('click', onTileClick));
+  tiles.forEach(tile => tile.addEventListener('touchstart', onTileClick, { passive: false }));
+
+  shuffleBtn.addEventListener('click', () => {
+    shufflePuzzle();
+  });
+
+  // Shuffle initially
+  shufflePuzzle();
 </script>
 
 </body>
